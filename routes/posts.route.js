@@ -17,7 +17,19 @@ router.post("/posts", authMiddleware, async (req, res) => {
 // 게시글 목록조회 API
 router.get("/posts", async (req, res) => {
   const _posts = await posts.findAll({
-    attributes: ["id", "userId", "title", "createdAt", "updatedAt"],
+    attributes: [
+      "id",
+      "userId",
+      [
+        sequelize.literal(
+          `(SELECT nickname FROM users WHERE users.id = posts.userId)`
+        ),
+        "nickname",
+      ],
+      "title",
+      "createdAt",
+      "updatedAt",
+    ],
     order: [["createdAt", "DESC"]],
   });
 
