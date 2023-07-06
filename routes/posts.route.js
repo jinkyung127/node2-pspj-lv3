@@ -2,7 +2,8 @@ const express = require("express");
 const router = express.Router();
 const commentsRouter = require("./comments.route");
 const authMiddleware = require("../middlewares/auth-middleware");
-const { sequelize, posts } = require("../models");
+const { sequelize, posts, likes } = require("../models");
+const { Op } = require("sequelize");
 
 router.use("/:postId/comments", commentsRouter);
 
@@ -91,6 +92,22 @@ router.delete("/posts/:id", async (req, res) => {
     return res.status(200).json({ message: "게시글을 삭제하였습니다." });
   } catch {
     res.status(400).json({ errorMessage: error.message });
+  }
+});
+
+// 게시글 좋아요 / 취소
+router.get("/:postId/like", authMiddleware, async (req, res) => {
+  const { postId } = req.params;
+  const { id } = res.locals.user;
+  const like = await likes.findOne({
+    where: { [Op.and]: [{ postId }, { userId: id }] },
+  });
+  if (like) {
+    likes.destroy({ where: { [Op.and]: [{ postId }, { userId: id }] } });
+    res.status(201).json({ message: "해당 게시글의 좋아요를 취소하셨습니다." });
+  } else {
+    likes.create({ userId: id, postId: postId });
+    res.status(201).json({ message: "해당 게시글을 좋아요 하셨습니다." });
   }
 });
 
