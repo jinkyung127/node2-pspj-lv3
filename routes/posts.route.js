@@ -2,10 +2,10 @@ const express = require("express");
 const router = express.Router();
 const commentsRouter = require("./comments.route");
 const authMiddleware = require("../middlewares/auth-middleware");
-const { sequelize, posts, likes } = require("../models");
+const { sequelize, users, posts, likes } = require("../models");
 const { Op } = require("sequelize");
 
-router.use("/:postId/comments", commentsRouter);
+router.use("/posts/:postId/comments", commentsRouter);
 
 // 게시글 작성 API
 router.post("/posts", authMiddleware, async (req, res) => {
@@ -96,7 +96,7 @@ router.delete("/posts/:id", async (req, res) => {
 });
 
 // 게시글 좋아요 / 취소
-router.get("/:postId/like", authMiddleware, async (req, res) => {
+router.get("/posts/:postId/like", authMiddleware, async (req, res) => {
   const { postId } = req.params;
   const { id } = res.locals.user;
   const like = await likes.findOne({
@@ -104,11 +104,28 @@ router.get("/:postId/like", authMiddleware, async (req, res) => {
   });
   if (like) {
     likes.destroy({ where: { [Op.and]: [{ postId }, { userId: id }] } });
-    res.status(201).json({ message: "해당 게시글의 좋아요를 취소하셨습니다." });
+    res.status(201).json({ message: "게시글의 좋아요를 취소하였습니다." });
   } else {
     likes.create({ userId: id, postId: postId });
-    res.status(201).json({ message: "해당 게시글을 좋아요 하셨습니다." });
+    res.status(201).json({ message: "게시글의 좋아요를 등록하였습니다." });
   }
+});
+
+// 좋아요 게시글 조회
+router.get("/posts/like", authMiddleware, async (req, res) => {
+  const { id } = res.locals.user;
+  const likeResults = await likes.findAll({
+    where: { userId: id },
+    attributes: ["postId"],
+    include: [
+      {
+        model: posts,
+        attributes: ["userId", "title", "createdAt", "updatedAt"],
+        include: [{ model: users, attributes: ["nickname"] }],
+      },
+    ],
+  });
+  return res.status(200).json({ posts: likeResults });
 });
 
 module.exports = router;

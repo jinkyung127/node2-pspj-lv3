@@ -23,6 +23,11 @@ module.exports = (sequelize, DataTypes) => {
         sourceKey: "id", // 3. Posts 모델의 postId 컬럼을
         foreignKey: "postId", // 4. Comments 모델의 PostId 컬럼과 연결합니다.
       });
+
+      this.hasMany(models.likes, {
+        sourceKey: "id",
+        foreignKey: "postId",
+      });
     }
   }
 

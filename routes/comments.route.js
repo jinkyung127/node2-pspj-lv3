@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router({ mergeParams: true }); // mergeParams 설정 추가
 
 const authMiddleware = require("../middlewares/auth-middleware");
-const { sequelize, posts, comments } = require("../models");
+const { sequelize, users, posts, comments } = require("../models");
 
 // 댓글 작성 api
 router.post("/", authMiddleware, async (req, res) => {
@@ -20,6 +20,22 @@ router.post("/", authMiddleware, async (req, res) => {
   } catch {
     res.status(400).json({ errorMessage: error.message });
   }
+});
+
+// 댓글 목록 조회
+router.get("/", authMiddleware, async (req, res) => {
+  const { postId } = req.params;
+  const post = await posts.findAll({
+    include: [
+      {
+        model: comments,
+        include: [{ model: users, attributes: ["nickname"] }],
+        attributes: ["id", "userId", "comment", "createdAt", "updatedAt"],
+      },
+    ],
+    where: { id: postId },
+  });
+  return res.status(200).json({ comments: post });
 });
 
 // 댓글 수정
