@@ -61,6 +61,7 @@ router.get("/posts/like", authMiddleware, async (req, res) => {
         ],
         include: { model: users, attributes: ["nickname"] },
       },
+      order: [[posts, "likeCnt", "DESC"]],
     });
 
     const mappedPosts = likedPosts.map((likedPost) => {
@@ -136,10 +137,6 @@ router.get("/posts/:postId/like", authMiddleware, async (req, res) => {
   const { postId } = req.params;
   const { id } = res.locals.user;
   try {
-    if (!postId) {
-      return res.status(404).json({ message: "게시글이 존재하지 않습니다." });
-    }
-
     const like = await likes.findOne({
       where: { [Op.and]: [{ postId }, { userId: id }] },
     });
