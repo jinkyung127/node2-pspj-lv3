@@ -1,7 +1,10 @@
 const express = require("express");
 const router = express.Router();
+const commentsRouter = require("./comments.route");
 const authMiddleware = require("../middlewares/auth-middleware");
 const { sequelize, posts } = require("../models");
+
+router.use("/:postId/comments", commentsRouter);
 
 // 게시글 작성 API
 router.post("/posts", authMiddleware, async (req, res) => {
