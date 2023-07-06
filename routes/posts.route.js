@@ -56,6 +56,7 @@ router.get("/posts/like", authMiddleware, async (req, res) => {
           "content",
           "createdAt",
           "updatedAt",
+          "likeCnt",
         ],
         include: { model: users, attributes: ["nickname"] },
       },
