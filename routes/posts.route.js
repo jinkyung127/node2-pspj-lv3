@@ -40,9 +40,42 @@ router.get("/posts", async (req, res) => {
   return res.status(200).json({ posts: _posts });
 });
 
+// 좋아요 게시글 조회 API
+router.get("/posts/like", authMiddleware, async (req, res) => {
+  const { id } = res.locals.user;
+
+  try {
+    const likedPosts = await likes.findAll({
+      where: { userId: id },
+      include: {
+        model: posts,
+        attributes: [
+          "id",
+          "userId",
+          "title",
+          "content",
+          "createdAt",
+          "updatedAt",
+        ],
+        include: { model: users, attributes: ["nickname"] },
+      },
+    });
+
+    const mappedPosts = likedPosts.map((likedPost) => {
+      return likedPost.toJSON().post;
+    });
+
+    return res.status(200).json({ mappedPosts });
+  } catch (error) {
+    res.status(400).json({ errorMessage: error.message });
+  }
+});
+
 // 게시글 상세 조회 API
 router.get("/posts/:id", async (req, res) => {
   const { id } = req.params;
+  console.log("abcd");
+
   const post = await posts.findOne({
     attributes: [
       "id",
@@ -104,28 +137,13 @@ router.get("/posts/:postId/like", authMiddleware, async (req, res) => {
   });
   if (like) {
     likes.destroy({ where: { [Op.and]: [{ postId }, { userId: id }] } });
+    await posts.decrement("likeCnt", { where: { id: postId } });
     res.status(201).json({ message: "게시글의 좋아요를 취소하였습니다." });
   } else {
     likes.create({ userId: id, postId: postId });
+    await posts.increment("likeCnt", { where: { id: postId } });
     res.status(201).json({ message: "게시글의 좋아요를 등록하였습니다." });
   }
-});
-
-// 좋아요 게시글 조회
-router.get("/posts/like", authMiddleware, async (req, res) => {
-  const { id } = res.locals.user;
-  const likeResults = await likes.findAll({
-    where: { userId: id },
-    attributes: ["postId"],
-    include: [
-      {
-        model: posts,
-        attributes: ["userId", "title", "createdAt", "updatedAt"],
-        include: [{ model: users, attributes: ["nickname"] }],
-      },
-    ],
-  });
-  return res.status(200).json({ posts: likeResults });
 });
 
 module.exports = router;

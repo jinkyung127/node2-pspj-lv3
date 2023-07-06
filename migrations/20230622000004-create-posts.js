@@ -36,6 +36,10 @@ module.exports = {
         type: Sequelize.DATE,
         defaultValue: Sequelize.fn("now"),
       },
+      likeCnt: {
+        type: Sequelize.INTEGER,
+        defaultValue: 0,
+      },
     });
   },
   async down(queryInterface, Sequelize) {
