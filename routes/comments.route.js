@@ -11,13 +11,22 @@ router.post("/", authMiddleware, async (req, res) => {
     const { content } = req.body;
     const { id } = res.locals.user;
 
+    if (!postId) {
+      return res.status(404).json({ message: "게시글이 존재하지 않습니다." });
+    }
+    if (!content) {
+      return res
+        .status(412)
+        .json({ message: "데이터형식이 올바르지않습니다." });
+    }
+
     const comment = await comments.create({
       postId: postId,
       userId: id,
       comment: content,
     });
     res.status(201).json({ message: "댓글이 작성되었습니다." });
-  } catch {
+  } catch (error) {
     res.status(400).json({ errorMessage: error.message });
   }
 });
@@ -25,17 +34,25 @@ router.post("/", authMiddleware, async (req, res) => {
 // 댓글 목록 조회
 router.get("/", authMiddleware, async (req, res) => {
   const { postId } = req.params;
-  const post = await posts.findAll({
-    include: [
-      {
-        model: comments,
-        include: [{ model: users, attributes: ["nickname"] }],
-        attributes: ["id", "userId", "comment", "createdAt", "updatedAt"],
-      },
-    ],
-    where: { id: postId },
-  });
-  return res.status(200).json({ comments: post });
+  try {
+    if (!postId) {
+      return res.status(404).json({ message: "게시글이 존재하지 않습니다." });
+    }
+
+    const post = await posts.findAll({
+      include: [
+        {
+          model: comments,
+          include: [{ model: users, attributes: ["nickname"] }],
+          attributes: ["id", "userId", "comment", "createdAt", "updatedAt"],
+        },
+      ],
+      where: { id: postId },
+    });
+    return res.status(200).json({ comments: post });
+  } catch (error) {
+    res.status(400).json({ errorMessage: error.message });
+  }
 });
 
 // 댓글 수정
@@ -44,23 +61,37 @@ router.put("/:commentId", authMiddleware, async (req, res) => {
   const content = req.body.content;
   const { id } = res.locals.user;
   const comment = await comments.findOne({ where: { id: commentId } });
-
-  if (!comment)
-    return res.status(400).json({ message: "댓글 내용을 입력해 주세요." });
-  if (comment) {
-    if (id !== comment.userId) {
-      return res.status(400).json({ message: "댓글 작성자가 아닙니다." });
-    } else {
-      await comments.update(
-        { comment: content },
-        {
-          where: {
-            id: commentId,
-          },
-        }
-      );
-      res.status(200).json({ message: "댓글을 수정하였습니다." });
+  try {
+    if (!postId) {
+      return res.status(404).json({ message: "게시글이 존재하지 않습니다." });
     }
+    if (!content) {
+      return res
+        .status(400)
+        .json({ message: "데이터 형식이 올바르지 않습니다." });
+    }
+    if (!comment) {
+      return res.status(400).json({ message: "댓글이 존재하지 않습니다." });
+    }
+    if (comment) {
+      if (id !== comment.userId) {
+        return res
+          .status(400)
+          .json({ message: "댓글의 수정 권한이 존재하지 않습니다." });
+      } else {
+        await comments.update(
+          { comment: content },
+          {
+            where: {
+              id: commentId,
+            },
+          }
+        );
+        res.status(200).json({ message: "댓글을 수정하였습니다." });
+      }
+    }
+  } catch (error) {
+    res.status(400).json({ errorMessage: error.message });
   }
 });
 
@@ -69,22 +100,28 @@ router.delete("/:commentId", authMiddleware, async (req, res) => {
   const commentId = req.params.commentId;
   const { id } = res.locals.user;
   const comment = await comments.findOne({ where: { id: commentId } });
-
-  if (!comment)
-    return res
-      .status(400)
-      .json({ message: "존재하지 않는 댓글은 삭제할 수 없습니다." });
-  if (comment) {
-    if (id !== comment.userId) {
-      return res.status(400).json({ message: "댓글 작성자가 아닙니다." });
-    } else {
-      await comments.destroy({
-        where: {
-          id: commentId,
-        },
-      });
-      res.status(200).json({ message: "댓글을 삭제하였습니다." });
+  try {
+    if (!postId) {
+      return res.status(404).json({ message: "게시글이 존재하지 않습니다." });
     }
+    if (!comment)
+      return res.status(400).json({ message: "댓글이 존재하지 않습니다." });
+    if (comment) {
+      if (id !== comment.userId) {
+        return res
+          .status(400)
+          .json({ message: "댓글의 삭제 권한이 존재하지 않습니다." });
+      } else {
+        await comments.destroy({
+          where: {
+            id: commentId,
+          },
+        });
+        res.status(200).json({ message: "댓글을 삭제하였습니다." });
+      }
+    }
+  } catch (error) {
+    res.status(400).json({ errorMessage: error.message });
   }
 });
 

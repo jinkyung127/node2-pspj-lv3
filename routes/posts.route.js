@@ -123,7 +123,7 @@ router.delete("/posts/:id", async (req, res) => {
     await post.destroy();
 
     return res.status(200).json({ message: "게시글을 삭제하였습니다." });
-  } catch {
+  } catch (error) {
     res.status(400).json({ errorMessage: error.message });
   }
 });
@@ -132,17 +132,25 @@ router.delete("/posts/:id", async (req, res) => {
 router.get("/posts/:postId/like", authMiddleware, async (req, res) => {
   const { postId } = req.params;
   const { id } = res.locals.user;
-  const like = await likes.findOne({
-    where: { [Op.and]: [{ postId }, { userId: id }] },
-  });
-  if (like) {
-    likes.destroy({ where: { [Op.and]: [{ postId }, { userId: id }] } });
-    await posts.decrement("likeCnt", { where: { id: postId } });
-    res.status(201).json({ message: "게시글의 좋아요를 취소하였습니다." });
-  } else {
-    likes.create({ userId: id, postId: postId });
-    await posts.increment("likeCnt", { where: { id: postId } });
-    res.status(201).json({ message: "게시글의 좋아요를 등록하였습니다." });
+  try {
+    if (!postId) {
+      return res.status(404).json({ message: "게시글이 존재하지 않습니다." });
+    }
+
+    const like = await likes.findOne({
+      where: { [Op.and]: [{ postId }, { userId: id }] },
+    });
+    if (like) {
+      likes.destroy({ where: { [Op.and]: [{ postId }, { userId: id }] } });
+      await posts.decrement("likeCnt", { where: { id: postId } });
+      res.status(201).json({ message: "게시글의 좋아요를 취소하였습니다." });
+    } else {
+      likes.create({ userId: id, postId: postId });
+      await posts.increment("likeCnt", { where: { id: postId } });
+      res.status(201).json({ message: "게시글의 좋아요를 등록하였습니다." });
+    }
+  } catch (error) {
+    res.status(400).json({ errorMessage: error.message });
   }
 });
 
