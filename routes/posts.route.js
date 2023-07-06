@@ -33,6 +33,7 @@ router.get("/posts", async (req, res) => {
       "title",
       "createdAt",
       "updatedAt",
+      "likeCnt",
     ],
     order: [["createdAt", "DESC"]],
   });
@@ -91,6 +92,7 @@ router.get("/posts/:id", async (req, res) => {
       "content",
       "createdAt",
       "updatedAt",
+      "likeCnt",
     ],
     where: { id },
   });
