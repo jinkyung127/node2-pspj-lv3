@@ -68,7 +68,7 @@ router.get("/posts/like", authMiddleware, async (req, res) => {
       return likedPost.toJSON().post;
     });
 
-    return res.status(200).json({ mappedPosts });
+    return res.status(200).json({ posts: mappedPosts });
   } catch (error) {
     res.status(400).json({ errorMessage: error.message });
   }

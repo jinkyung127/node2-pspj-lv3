@@ -49,7 +49,12 @@ router.get("/", authMiddleware, async (req, res) => {
       ],
       where: { id: postId },
     });
-    return res.status(200).json({ comments: post });
+
+    const mappedPost = post.map((comments) => {
+      return comments.toJSON().comments;
+    });
+
+    return res.status(200).json({ comments: mappedPost });
   } catch (error) {
     res.status(400).json({ errorMessage: error.message });
   }
