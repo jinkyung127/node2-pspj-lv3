@@ -58,7 +58,7 @@ router.post("/login", async (req, res) => {
     {
       userId: user.id,
     },
-    "customized_secret_key"
+    process.env.COOKIE_SECRET
   );
   // 쿠키 발급
   res.cookie("authorization", `Bearer ${token}`);

@@ -1,5 +1,9 @@
 const express = require("express");
 const cookieParser = require("cookie-parser");
+
+const dotenv = require("dotenv");
+dotenv.config();
+
 const usersRouter = require("./routes/users.route");
 const postsRouter = require("./routes/posts.route");
 const app = express();
