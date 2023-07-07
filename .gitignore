@@ -143,5 +143,3 @@ dist
 
 # End of https://www.toptal.com/developers/gitignore/api/node
 
-# config 폴더 무시
-config/
