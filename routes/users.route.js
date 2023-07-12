@@ -2,11 +2,14 @@ const express = require("express");
 const jwt = require("jsonwebtoken");
 const { users } = require("../models");
 const router = express.Router();
+const bcrypt = require("bcrypt");
 
 // 회원가입 API
 router.post("/signup", async (req, res) => {
   try {
     const { nickname, password } = req.body;
+    const encrypted = await bcrypt.hash(password, 10);
+
     // 닉네임 형식 검사
     if (!/^[a-zA-Z0-9]{3,}$/.test(nickname)) {
       res.status(412).json({
@@ -37,7 +40,7 @@ router.post("/signup", async (req, res) => {
     }
 
     // Users 테이블에 사용자를 추가
-    const user = await users.create({ nickname, password });
+    const user = await users.create({ nickname, password: encrypted });
 
     return res.status(201).json({ message: "회원가입이 완료되었습니다." });
   } catch (error) {
@@ -49,10 +52,15 @@ router.post("/signup", async (req, res) => {
 router.post("/login", async (req, res) => {
   const { nickname, password } = req.body;
   const user = await users.findOne({ where: { nickname } });
-  if (!user || user.password !== password) {
-    return res
-      .status(401)
-      .json({ message: "닉네임 또는 패스워드를 확인해주세요." });
+  const passwordOk = await bcrypt.compare(password, user.password);
+
+  if (!user) {
+    return res.status(401).json({ message: "닉네임을 확인해주세요." });
+  }
+  if (user) {
+    const passwordOk = await bcrypt.compare(password, user.password);
+    if (!passwordOk)
+      return res.status(400).json({ message: "비밀번호를 확인해 주세요." });
   }
   const token = jwt.sign(
     {
